@@ -1,5 +1,7 @@
 import os
 import streamlit as st
+from pdf2image import convert_from_path
+import pytesseract
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
@@ -12,12 +14,25 @@ from tempfile import NamedTemporaryFile
 # Set API key
 os.environ["GROQ_API_KEY"] = "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"  # Replace with your actual key
 
+def ocr_pdf(file_path):
+    """Extracts text using OCR from image-based PDFs."""
+    images = convert_from_path(file_path)
+    text = "\n".join([pytesseract.image_to_string(img) for img in images])
+    return text if text.strip() else None
+    
 def load_document(file):
     """Loads text from a PDF or DOCX file."""
     if file.name.endswith(".pdf"):
-        doc_loader = PyPDFLoader(file.name)
-        pages = doc_loader.load()
-        return "\n".join([page.page_content for page in pages])
+        try:
+            doc_loader = PyPDFLoader(file_path)
+            pages = doc_loader.load()
+            extracted_text = "\n".join([page.page_content for page in pages])
+            if not extracted_text.strip():
+                extracted_text = ocr_pdf(file_path)  # Fallback to OCR
+            return extracted_text
+        except Exception:
+            return None
+
     elif file.name.endswith(".docx"):
         doc = Document(file)
         return "\n".join([para.text for para in doc.paragraphs])

@@ -3,3 +3,4 @@ Retrieval Augmented Generation performed on a document using a pre-trained LLM t
 The app makes use of tesseract for OCR (to extract text from the pages), langchain - for invoking the chain pipeline and a pre-trained llama3-8b model. 
 
 ## Streamlit UI
+<img src = "ui.png">

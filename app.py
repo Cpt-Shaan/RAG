@@ -12,30 +12,34 @@ from docx import Document
 from tempfile import NamedTemporaryFile
 
 # Set API key
-os.environ["GROQ_API_KEY"] = "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"  # Replace with your actual key
+os.environ["GROQ_API_KEY"] = "your_groq_api_key_here"  # Replace with your actual key
 
 def ocr_pdf(file_path):
     """Extracts text using OCR from image-based PDFs."""
     images = convert_from_path(file_path)
     text = "\n".join([pytesseract.image_to_string(img) for img in images])
-    return text if text.strip() else None
-    
-def load_document(file):
+    return text.strip() if text.strip() else None
+
+def load_document(file_path):
     """Loads text from a PDF or DOCX file."""
-    if file.name.endswith(".pdf"):
+    if file_path.endswith(".pdf"):
         try:
             doc_loader = PyPDFLoader(file_path)
             pages = doc_loader.load()
             extracted_text = "\n".join([page.page_content for page in pages])
+            
+            # If extracted text is empty, fallback to OCR
             if not extracted_text.strip():
-                extracted_text = ocr_pdf(file_path)  # Fallback to OCR
-            return extracted_text
+                extracted_text = ocr_pdf(file_path)
+
+            return extracted_text if extracted_text else None
         except Exception:
             return None
 
-    elif file.name.endswith(".docx"):
-        doc = Document(file)
+    elif file_path.endswith(".docx"):
+        doc = Document(file_path)
         return "\n".join([para.text for para in doc.paragraphs])
+    
     return None
 
 def process_text(text):
@@ -81,15 +85,16 @@ uploaded_file = st.file_uploader("Upload a PDF or DOCX document", type=["pdf", "
 query = st.text_input("Enter your query:")
 
 if uploaded_file and query:
-    with NamedTemporaryFile(delete=False) as temp_file:
+    with NamedTemporaryFile(delete=False, suffix=".pdf" if uploaded_file.name.endswith(".pdf") else ".docx") as temp_file:
         temp_file.write(uploaded_file.read())
-        temp_file_path = temp_file.name
+        temp_file_path = temp_file.name  # Ensure we get the correct temp file path
     
-    document_text = load_document(open(temp_file_path, "rb"))
+    document_text = load_document(temp_file_path)
+    
     if document_text:
         db = process_text(document_text)
         response = generate_response(db, query)
         st.subheader("Response:")
         st.write(response)
     else:
-        st.error("Unsupported file format.")
+        st.error("Could not extract text. The PDF may contain scanned images or unsupported formats.")

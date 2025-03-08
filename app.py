@@ -12,7 +12,7 @@ from docx import Document
 from tempfile import NamedTemporaryFile
 
 # Set API key
-os.environ["GROQ_API_KEY"] = "your_groq_api_key_here"  # Replace with your actual key
+os.environ["GROQ_API_KEY"] = "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"  # Replace with your actual key
 
 def ocr_pdf(file_path):
     """Extracts text using OCR from image-based PDFs."""
